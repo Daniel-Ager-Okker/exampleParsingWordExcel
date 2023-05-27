@@ -109,7 +109,7 @@
     <Import Include="System.Threading.Tasks" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Converter.vb" />
+    <Compile Include="Handler.vb" />
     <Compile Include="MainForm.vb">
       <SubType>Form</SubType>
     </Compile>
