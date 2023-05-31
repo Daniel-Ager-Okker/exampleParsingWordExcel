@@ -7,8 +7,8 @@ class Handler:
     def __init__(self):
         self.pathToOldWord_ = ""
         self.pathToNewWord_ = ""
-        self.dataOldDoc_ = pd.DataFrame()
-        self.dataNewDoc_ = pd.DataFrame()
+        self.dataOldDoc_ = {}
+        self.dataNewDoc_ = {}
         self.dataOldHandled_ = {}
         self.dataNewHandled_ = {}
         self.mistakedWithDiffRevInNew_ = {}
@@ -26,8 +26,8 @@ class Handler:
         self.pathToNewWord_ = path
 
     def parseOldWord(self) -> None:
-        self.parseWord(self.pathToOldWord_, self.dataOldDoc_)
-        self.handleMistakedInOneDoc(self.dataOldDoc_, self.mistakedWithDiffRevInOld_, self.dataOldHandled_)
+        self.__parseWord(self.pathToOldWord_, self.dataOldDoc_)
+        self.__handleMistakedInOneDoc(self.dataOldDoc_, self.mistakedWithDiffRevInOld_, self.dataOldHandled_)
 
     def exportOldWordData(self) -> None:
         pathToExtractedData = self.pathToOldWord_.replace(".docx", ".xlsx")
@@ -37,7 +37,7 @@ class Handler:
         pathToExtractedData = self.pathToNewWord_.replace(".docx", ".xlsx")
         self.exportWordData(self.dataNewDoc_, pathToExtractedData)
 
-    def parseWord(self, pathToWord: str, dataToFill: pd.DataFrame):
+    def __parseWord(self, pathToWord: str, dataToFill: pd.DataFrame) -> None:
         document = docx.Document(pathToWord)
         tables = document.tables
         for table in tables:
@@ -98,7 +98,7 @@ class Handler:
 
             dataToFill[nomination].append(revisionNumber)
 
-    def __handleMistakesInOneDoc(self, dataDoc, withDiffRevInDoc, dataHandled):
+    def __handleMistakedInOneDoc(self, dataDoc, withDiffRevInDoc, dataHandled):
         for nomination in dataDoc.keys():
             revisions = dataDoc[nomination]
             if self.__nominationIsValidInDoc(revisions):
