@@ -1,14 +1,15 @@
 import pandas as pd
 import openpyxl
 import docx
+from collections import defaultdict
 
 
 class Handler:
     def __init__(self):
         self.pathToOldWord_ = ""
         self.pathToNewWord_ = ""
-        self.dataOldDoc_ = {}
-        self.dataNewDoc_ = {}
+        self.dataOldDoc_ = defaultdict(list)
+        self.dataNewDoc_ = defaultdict(list)
         self.dataOldHandled_ = {}
         self.dataNewHandled_ = {}
         self.mistakedWithDiffRevInNew_ = {}
@@ -46,57 +47,31 @@ class Handler:
 
     def __isTableIsValid(self, table):
         rows = table.rows
-        first_row_cells = rows[0].cells
+        firstRowCells = rows[0].cells
 
-        lastCellText = first_row_cells[-1].text
-        lastCellCond1 = "Weight" in lastCellText
-        lastCellCond2 = "weight" in lastCellText
-        lastCellCond3 = "(kg)" in lastCellText
-        if not (lastCellCond1 or lastCellCond2 or lastCellCond3):
+        lastCellText = firstRowCells[-1].text.lower()
+        neededWords = ["weight", "(kg)"]
+        if not any(word in lastCellText for word in neededWords):
             return False
 
-        secondCellText = first_row_cells[1].text
-
-        secondCellContains1 = "Workpack" in secondCellText
-        secondCellContains2 = "Block" in secondCellText
-        secondCellContains3 = "Assembly" in secondCellText
-
-        if secondCellContains1 or secondCellContains2 or secondCellContains3:
+        secondCellText = firstRowCells[1].text
+        secondCellBadWords = {"Workpack", "Block", "Assembly"}
+        secondCellText = firstRowCells[1].text
+        if any(word in secondCellText for word in secondCellBadWords):
             return False
 
-        secondCellCond1 = "Subassembly" in secondCellText
-        secondCellCond2 = "node" in secondCellText
-        secondCellCond3 = "Mark" in secondCellText
-        secondCellCond4 = "DETAILS" in secondCellText
-        secondCellCond5 = "Details" in secondCellText
-        secondCellCond6 = "Single" in secondCellText
-        secondCellCond7 = "part" in secondCellText
-        secondCellComplexCond = secondCellCond1 or secondCellCond2 or secondCellCond3 or \
-                                secondCellCond4 or secondCellCond5 or secondCellCond6 or secondCellCond7
-
-        if not secondCellComplexCond:
+        secondCellConditions = {"Subassembly", "node", "Mark", "DETAILS", "Details", "Single", "part"}
+        if not any(cond in secondCellText for cond in secondCellConditions):
             return False
 
         return True
 
     def __getInfoFromTable(self, table, dataToFill):
-        rows = table.rows
-        for rowNum in range(1, len(rows)):
-            row = rows[rowNum]
-            cells = row.cells
-            if len(cells) < 3:
-                continue
+        for i, cells in enumerate([row.cells for row in table.rows[1:] if len(row.cells) >= 3], start=1):
+            nomination = cells[2].text
+            revisionNumber = cells[3].text
 
-            thirdCell = cells[2]
-            nomination = thirdCell.text
-
-            fourthCell = cells[3]
-            revisionNumber = fourthCell.text
-
-            if nomination not in dataToFill:
-                dataToFill[nomination] = []
-
-            dataToFill[nomination].append(revisionNumber)
+            dataToFill[nomination.text].append(revisionNumber.text)
 
     def __handleMistakedInOneDoc(self, dataDoc, withDiffRevInDoc, dataHandled):
         for nomination in dataDoc.keys():
