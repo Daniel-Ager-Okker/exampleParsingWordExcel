@@ -95,39 +95,26 @@ Public Class Handler
         Dim firstRow As TableRow = rows.First()
         Dim firstRowCells As IEnumerable(Of TableCell) = firstRow.Elements(Of TableCell)
 
-        Dim lastCellText As String = firstRowCells.ElementAt(firstRowCells.Count() - 1).InnerText
-        Dim lastCellCond1 As Boolean = lastCellText.Contains("Weight")
-        Dim lastCellCond2 As Boolean = lastCellText.Contains("weight")
-        Dim lastCellCond3 As Boolean = lastCellText.Contains("(kg)")
-        If Not (lastCellCond1 Or lastCellCond2 Or lastCellCond3) Then
+        Dim lastCellText As String = firstRowCells.Last().InnerText
+        Dim lastCellCond As Boolean = lastCellText.ToLower().Contains("weight") Or lastCellText.Contains("(kg)")
+        If Not lastCellCond Then
             Return False
         End If
 
-        Dim secondCellText As String = firstRowCells.ElementAt(1).InnerText
+        Dim secondCellText As String = firstRowCells.ElementAt(1).InnerText.ToLower()
 
-        Dim secondCellContains1 As Boolean = secondCellText.Contains("Workpack")
-        Dim secondCellContains2 As Boolean = secondCellText.Contains("Block")
-        Dim secondCellContains3 As Boolean = secondCellText.Contains("Assembly")
-
-        If (secondCellContains1 Or secondCellContains2 Or secondCellContains3) Then
+        If secondCellText.Contains("workpack") Or secondCellText.Contains("block") Or secondCellText.Contains("assembly") Then
             Return False
         End If
 
-        Dim secondCellCond1 As Boolean = secondCellText.Contains("Subassembly")
-        Dim secondCellCond2 As Boolean = secondCellText.Contains("node")
-        Dim secondCellCond3 As Boolean = secondCellText.Contains("Mark")
-        Dim secondCellCond4 As Boolean = secondCellText.Contains("DETAILS")
-        Dim secondCellCond5 As Boolean = secondCellText.Contains("Details")
-        Dim secondCellCond6 As Boolean = secondCellText.Contains("Single")
-        Dim secondCellCond7 As Boolean = secondCellText.Contains("part")
-        Dim secondCellComplexCond As Boolean = secondCellCond1 Or secondCellCond2 Or secondCellCond3 Or
-            secondCellCond4 Or secondCellCond5 Or secondCellCond6 Or secondCellCond7
+        Dim keyWords() As String = {"subassembly", "node", "mark", "details", "single", "part"}
+        For Each keyWord As String In keyWords
+            If secondCellText.Contains(keyWord) Then
+                Return True
+            End If
+        Next
 
-        If Not secondCellComplexCond Then
-            Return False
-        End If
-
-        Return True
+        Return False
     End Function
 
     Private Function getInfoFromTable(table As WordTable, dataToFill As Dictionary(Of String, List(Of String)))
