@@ -19,8 +19,6 @@ class MyWindow(QMainWindow):
         self.ui.pbLoadNewWord.clicked.connect(self.__onLoadNewWord)
         self.ui.pbCompareAndExport.clicked.connect(self.__onCompareAndExport)
         self.ui.pbClean.clicked.connect(self.__onClean)
-        self.ui.pbLoadPDBExcel.clicked.connect(self.__onLoadPDBExcel)
-        self.ui.pbCompareWithPDBAndExport.clicked.connect(self.__onCompareWithPDBAndExport)
 
     def __onLoadOldWord(self):
         pathToOldWord = self.__getOpenFileName("docx")
@@ -28,41 +26,48 @@ class MyWindow(QMainWindow):
             return
 
         self.handler_.setPathToOldWord(pathToOldWord)
-        # try:
         self.handler_.parseOldWord()
         if self.ui.chbxExportOld2Excel.isChecked():
             self.handler_.exportOldWordData()
-        self.ui.lblOldWord.Text = " : " + pathToOldWord
-        '''except Exception as exc:
-            msgBox = QMessageBox(exc.Message)
-            msgBox.exec_()'''
+        self.ui.lblOldWord.setText(" : " + pathToOldWord)
 
     def __onLoadNewWord(self):
-        # implementation for loading new word file
-        pass
+        pathToNewWord = self.__getOpenFileName("docx")
+        if pathToNewWord == "":
+            return
+
+        self.handler_.setPathToNewWord(pathToNewWord)
+        self.handler_.parseNewWord()
+        if self.ui.chbxExportNew2Excel.isChecked():
+            self.handler_.exportOldWordData()
+        self.ui.lblNewWord.setText(" : " + pathToNewWord)
 
     def __onCompareAndExport(self):
-        # implementation for comparing and exporting files
-        pass
+        self.handler_.compareHashTables()
+        self.__exportComparedData()
 
     def __onClean(self):
         # implementation for cleaning files
         pass
 
-    def __onLoadPDBExcel(self):
-        # implementation for loading PDB Excel file
-        pass
-
-    def __onCompareWithPDBAndExport(self):
-        # implementation for comparing with PDB Excel and exporting file
-        pass
-
     def __getOpenFileName(self, extension: str):
         options = QFileDialog.Options()
-        options |= QFileDialog.DontUseNativeDialog
         file, _ = QFileDialog.getOpenFileName(None, "QFileDialog.getOpenFileName()", "",
                                               f'All Files (*);;{extension} Files (*.{extension})', options=options)
-        return  file
+        return file
+
+    def __exportComparedData(self) -> None:
+        pathToExcel = self.__getSaveFileName("xlsx")
+        if "" == pathToExcel:
+            return
+
+        self.handler_.exportDataToExcel(pathToExcel)
+
+    def __getSaveFileName(self, extension: str) -> None:
+        options = QFileDialog.Options()
+        file, _ = QFileDialog.getSaveFileName(None, "QFileDialog.getSaveFileName()", "",
+                                              f'All Files (*);;{extension} Files (*.{extension})', options=options)
+        return file
 
 
 if __name__ == '__main__':

@@ -15,10 +15,6 @@ class Handler:
         self.mistakedWithDiffRevInNew_ = {}
         self.mistakedWithDiffRevInOld_ = {}
         self.names_ = {"Not changed": [], "Mistaked": [], "Changed": [], "New:": [], "Deleted": []}
-        self.pathToPDBExcel_ = ""
-        self.pdbExcelData_ = {}
-        self.inPDB_ = []
-        self.notInPDB_ = []
 
     def setPathToOldWord(self, path: str) -> None:
         self.pathToOldWord_ = path
@@ -29,6 +25,10 @@ class Handler:
     def parseOldWord(self) -> None:
         self.__parseWord(self.pathToOldWord_, self.dataOldDoc_)
         self.__handleMistakedInOneDoc(self.dataOldDoc_, self.mistakedWithDiffRevInOld_, self.dataOldHandled_)
+
+    def parseNewWord(self) -> None:
+        self.__parseWord(self.pathToNewWord_, self.dataNewDoc_)
+        self.__handleMistakedInOneDoc(self.dataNewDoc_, self.mistakedWithDiffRevInNew_, self.dataNewHandled_)
 
     def exportOldWordData(self) -> None:
         pathToExtractedData = self.pathToOldWord_.replace(".docx", ".xlsx")
@@ -71,7 +71,7 @@ class Handler:
             nomination = cells[2].text
             revisionNumber = cells[3].text
 
-            dataToFill[nomination.text].append(revisionNumber.text)
+            dataToFill[nomination].append(revisionNumber)
 
     def __handleMistakedInOneDoc(self, dataDoc, withDiffRevInDoc, dataHandled):
         for nomination in dataDoc.keys():
@@ -94,30 +94,30 @@ class Handler:
                 return False
         return True
 
-    def compareHashTables(self):
-        newDataKeys = self.dataNewHandled.keys()
+    def compareHashTables(self) -> None:
+        newDataKeys = self.dataNewHandled_.keys()
         for newDataKey in newDataKeys:
-            if newDataKey in self.dataOldDoc:
-                newRevisionValue = self.dataNewHandled[newDataKey]
-                oldRevisionValue = self.dataOldHandled[newDataKey]
+            if newDataKey in self.dataOldDoc_:
+                newRevisionValue = self.dataNewHandled_[newDataKey]
+                oldRevisionValue = self.dataNewHandled_[newDataKey]
                 if newRevisionValue == oldRevisionValue:
-                    self.names["notChanged"].append(newDataKey)
+                    self.names_["Not changed"].append(newDataKey)
                 else:
                     oldRevVal = int(oldRevisionValue)
                     newRevVal = int(newRevisionValue)
                     if newRevVal == oldRevVal + 1:
-                        self.names["changed"].append(newDataKey)
+                        self.names_["Changed"].append(newDataKey)
                     else:
-                        self.names["mistaked"].append(newDataKey)
+                        self.names_["Mistaked"].append(newDataKey)
             else:
-                self.names["new"].append(newDataKey)
+                self.names_["New"].append(newDataKey)
         self.__findDeletedNominations()
 
     def __findDeletedNominations(self):
-        oldNominations = self.dataOldHandled.keys()
+        oldNominations = self.dataNewHandled_.keys()
         for oldKey in oldNominations:
-            if oldKey not in self.dataNewHandled and oldKey not in self.mistakedWithDiffRevInNew:
-                self.names["deleted"].append(oldKey)
+            if oldKey not in self.dataNewHandled_ and oldKey not in self.mistakedWithDiffRevInNew_:
+                self.names_["Deleted"].append(oldKey)
 
     def exportDataToExcel(self, path):
         wb = openpyxl.Workbook()
@@ -132,6 +132,20 @@ class Handler:
         self.__exportMistakedInNewDoc(workSheet)
 
         wb.save(path)
+
+    def __exportNotChanged(self, workSheet) -> None:
+        rowNum = 1
+        workSheet.Cells(rowNum, 1).Value = "Not changed"
+        workSheet.Cells(rowNum, 2).Value = "NEW REV."
+        rowNum += 1
+        for nomination in self.names_("Not changed"):
+            obj = nomination
+            workSheet.Cells(rowNum, 4).Value = obj
+
+            newRev = self.dataNewHandled_(nomination)
+            workSheet.Cells(rowNum, 5).Value = newRev
+
+            rowNum += 1
 
     def __exportChanged(self, workSheet):
         rowNum = 1
@@ -201,76 +215,3 @@ class Handler:
                 workSheet.Cells(rowNum, 17).Value = item.Key()
                 workSheet.Cells(rowNum, 18).Value = rev
                 rowNum += 1
-
-    def setPathToPDBExcel(self, path):
-        self.pathToPDBExcel_ = path
-
-    def parsePDBExcel(self):
-        # Open Workbook
-        workbook = openpyxl.load_workbook(self.pathToPDBExcel_)
-        worksheet = workbook.active
-
-        # Read nominations and its revisions
-        nominations = []
-        revisions = []
-        for row in worksheet.iter_rows(values_only=True):
-            nominations.append(row[14])
-            revisions.append(row[21])
-
-        # Add data into the pdbExcelData_
-        for nom, rev in zip(nominations, revisions):
-            if nom in self.pdbExcelData_:
-                raise Exception("В Excel-файле в столбце O есть дубликаты! Исправьте и перезагрузите")
-            else:
-                self.pdbExcelData_[nom] = rev
-
-    def compareHandledDataWithPDB(self):
-        consideredNames = ["Mistaked", "Changed", "New"]
-        for key in consideredNames:
-            tagNominations = self.names_[key]
-
-            for nom in tagNominations:
-                if nom in self.pdbExcelData_:
-                    self.inPDB_.append(nom)
-                else:
-                    self.notInPDB_.append(nom)
-
-    def exportComparisonPDBToExcel(self, path: str):
-        wb = openpyxl.Workbook()
-        workSheet = wb.active
-        workSheet.title = "Summary"
-
-        workSheet.Range("A1:D1").Merge()
-        workSheet.Range("A1").Value = "In PDB"
-        workSheet.Cells(2, 1).Value = "NAME"
-        workSheet.Cells(2, 2).Value = "OLD REV."
-        workSheet.Cells(2, 3).Value = "NEW REV."
-        workSheet.Cells(2, 4).Value = "PDB REV."
-
-        workSheet.Range("F1:I1").Merge()
-        workSheet.Range("F1").Value = "Not in PDB"
-        workSheet.Cells(2, 6).Value = "NAME"
-        workSheet.Cells(2, 7).Value = "OLD REV."
-        workSheet.Cells(2, 8).Value = "NEW REV."
-        workSheet.Cells(2, 9).Value = "PDB REV."
-
-        rowNum = 3
-        for nom in self.inPDB_:
-            workSheet.Cells(rowNum, 1).Value = nom
-            if nom in self.dataOldHandled_:
-                workSheet.Cells(rowNum, 2).Value = self.dataOldHandled_[nom]
-            else:
-                workSheet.Cells(rowNum, 2).Value = "-"
-            workSheet.Cells(rowNum, 3).Value = self.dataNewHandled_[nom]
-            workSheet.Cells(rowNum, 4).Value = self.pdbExcelData_[nom]
-            rowNum += 1
-
-        rowNum = 3
-        for nom in self.notInPDB_:
-            workSheet.Cells(rowNum, 6).Value = nom
-            workSheet.Cells(rowNum, 7).Value = self.dataOldHandled_[nom]
-            workSheet.Cells(rowNum, 8).Value = self.dataNewHandled_[nom]
-            workSheet.Cells(rowNum, 9).Value = "-"
-            rowNum += 1
-
-        wb.save(path)
