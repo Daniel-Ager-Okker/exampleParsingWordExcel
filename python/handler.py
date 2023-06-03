@@ -1,4 +1,3 @@
-import pandas as pd
 import openpyxl
 import docx
 from collections import defaultdict
@@ -14,7 +13,19 @@ class Handler:
         self.dataNewHandled_ = {}
         self.mistakedWithDiffRevInNew_ = {}
         self.mistakedWithDiffRevInOld_ = {}
-        self.names_ = {"Not changed": [], "Mistaked": [], "Changed": [], "New:": [], "Deleted": []}
+        self.names_ = {"Not changed": [], "Mistaked": [], "Changed": [], "New": [], "Deleted": []}
+
+    def clearData(self):
+        self.pathToOldWord_ = ""
+        self.pathToNewWord_ = ""
+        self.dataOldDoc_.clear()
+        self.dataNewDoc_.clear()
+        self.dataOldHandled_.clear()
+        self.dataNewHandled_.clear()
+        self.mistakedWithDiffRevInNew_.clear()
+        self.mistakedWithDiffRevInOld_.clear()
+        self.names_.clear()
+        self.names_ = {"Not changed": [], "Mistaked": [], "Changed": [], "New": [], "Deleted": []}
 
     def setPathToOldWord(self, path: str) -> None:
         self.pathToOldWord_ = path
@@ -32,11 +43,11 @@ class Handler:
 
     def exportOldWordData(self) -> None:
         pathToExtractedData = self.pathToOldWord_.replace(".docx", ".xlsx")
-        self.exportWordData(self.dataOldDoc_, pathToExtractedData)
+        self.__exportWordData(self.dataOldDoc_, pathToExtractedData)
 
     def exportNewWordData(self) -> None:
         pathToExtractedData = self.pathToNewWord_.replace(".docx", ".xlsx")
-        self.exportWordData(self.dataNewDoc_, pathToExtractedData)
+        self.__exportWordData(self.dataNewDoc_, pathToExtractedData)
 
     def __parseWord(self, pathToWord: str, dataToFill: pd.DataFrame) -> None:
         document = docx.Document(pathToWord)
@@ -45,7 +56,7 @@ class Handler:
             if self.__isTableIsValid(table):
                 self.__getInfoFromTable(table, dataToFill)
 
-    def __isTableIsValid(self, table):
+    def __isTableIsValid(self, table) -> bool:
         rows = table.rows
         firstRowCells = rows[0].cells
 
@@ -66,14 +77,14 @@ class Handler:
 
         return True
 
-    def __getInfoFromTable(self, table, dataToFill):
-        for i, cells in enumerate([row.cells for row in table.rows[1:] if len(row.cells) >= 3], start=1):
-            nomination = cells[2].text
-            revisionNumber = cells[3].text
+    def __getInfoFromTable(self, table, dataToFill) -> None:
+        for row in table.rows[1:-1]:
+            nomination = row.cells[2].text
+            revisionNumber = row.cells[3].text
 
             dataToFill[nomination].append(revisionNumber)
 
-    def __handleMistakedInOneDoc(self, dataDoc, withDiffRevInDoc, dataHandled):
+    def __handleMistakedInOneDoc(self, dataDoc, withDiffRevInDoc, dataHandled) -> None:
         for nomination in dataDoc.keys():
             revisions = dataDoc[nomination]
             if self.__nominationIsValidInDoc(revisions):
@@ -86,7 +97,7 @@ class Handler:
                     else:
                         withDiffRevInDoc[nomination] = [uniqueRev]
 
-    def __nominationIsValidInDoc(self, revisions):
+    def __nominationIsValidInDoc(self, revisions) -> bool:
         if len(revisions) == 1:
             return True
         for i in range(1, len(revisions)):
@@ -95,11 +106,10 @@ class Handler:
         return True
 
     def compareHashTables(self) -> None:
-        newDataKeys = self.dataNewHandled_.keys()
-        for newDataKey in newDataKeys:
-            if newDataKey in self.dataOldDoc_:
+        for newDataKey in self.dataNewHandled_.keys():
+            if newDataKey in self.dataOldHandled_.keys():
                 newRevisionValue = self.dataNewHandled_[newDataKey]
-                oldRevisionValue = self.dataNewHandled_[newDataKey]
+                oldRevisionValue = self.dataOldHandled_[newDataKey]
                 if newRevisionValue == oldRevisionValue:
                     self.names_["Not changed"].append(newDataKey)
                 else:
@@ -113,13 +123,13 @@ class Handler:
                 self.names_["New"].append(newDataKey)
         self.__findDeletedNominations()
 
-    def __findDeletedNominations(self):
+    def __findDeletedNominations(self) -> None:
         oldNominations = self.dataNewHandled_.keys()
         for oldKey in oldNominations:
             if oldKey not in self.dataNewHandled_ and oldKey not in self.mistakedWithDiffRevInNew_:
                 self.names_["Deleted"].append(oldKey)
 
-    def exportDataToExcel(self, path):
+    def exportDataToExcel(self, path) -> None:
         wb = openpyxl.Workbook()
         workSheet = wb.active
         workSheet.title = "Data"
@@ -135,83 +145,98 @@ class Handler:
 
     def __exportNotChanged(self, workSheet) -> None:
         rowNum = 1
-        workSheet.Cells(rowNum, 1).Value = "Not changed"
-        workSheet.Cells(rowNum, 2).Value = "NEW REV."
+        workSheet['A1'] = "Not changed"
+        workSheet['B1'] = "REV."
         rowNum += 1
-        for nomination in self.names_("Not changed"):
+        for nomination in self.names_["Not changed"]:
             obj = nomination
-            workSheet.Cells(rowNum, 4).Value = obj
+            workSheet[f'A{str(rowNum)}'] = obj
 
-            newRev = self.dataNewHandled_(nomination)
-            workSheet.Cells(rowNum, 5).Value = newRev
+            newRev = self.dataNewHandled_[nomination]
+            workSheet[f'B{str(rowNum)}'] = newRev
 
             rowNum += 1
 
-    def __exportChanged(self, workSheet):
+    def __exportChanged(self, workSheet) -> None:
         rowNum = 1
-        workSheet.Cells(rowNum, 4).Value = "Changed"
-        workSheet.Cells(rowNum, 5).Value = "NEW REV."
+        workSheet['D1'] = "Changed"
+        workSheet['E1'] = "NEW changed REV."
         rowNum += 1
-        for nomination in self.names_("Changed"):
+        for nomination in self.names_["Changed"]:
             obj = nomination
-            workSheet.Cells(rowNum, 4).Value = obj
+            workSheet[f'D{str(rowNum)}'] = obj
 
-            newRev = self.dataNewHandled_(nomination)
-            workSheet.Cells(rowNum, 5).Value = newRev
+            newRev = self.dataNewHandled_[nomination]
+            workSheet[f'E{str(rowNum)}'] = newRev
 
             rowNum += 1
 
-    def __exportNew(self, workSheet):
+    def __exportNew(self, workSheet) -> None:
         rowNum = 1
-        workSheet.Cells(rowNum, 7).Value = "New"
-        workSheet.Cells(rowNum, 8).Value = "NEW REV."
+        workSheet['G1'] = "New"
+        workSheet['H1'] = "NEW REV."
         rowNum += 1
-        for nomination in self.names_("New"):
+        for nomination in self.names_["New"]:
             obj = nomination
-            workSheet.Cells(rowNum, 7).Value = obj
+            workSheet[f'G{str(rowNum)}'] = obj
 
-            newRev = self.dataNewHandled_(nomination)
-            workSheet.Cells(rowNum, 8).Value = newRev
+            newRev = self.dataNewHandled_[nomination]
+            workSheet[f'H{str(rowNum)}'] = newRev
 
             rowNum += 1
 
-    def __exportDeleted(self, workSheet):
+    def __exportDeleted(self, workSheet) -> None:
         rowNum = 1
-        workSheet.Cells(rowNum, 10).Value = "Deleted"
-        workSheet.Cells(rowNum, 11).Value = "OLD REV."
+        workSheet['J1'] = "Deleted"
+        workSheet['K1'] = "OLD REV."
         rowNum += 1
-        for nomination in self.names_("Deleted"):
+        for nomination in self.names_["Deleted"]:
             obj = nomination
-            workSheet.Cells(rowNum, 10).Value = obj
+            workSheet[f'J{str(rowNum)}'] = obj
 
-            newRev = self.dataOldHandled_(nomination)
-            workSheet.Cells(rowNum, 11).Value = newRev
-
-            rowNum += 1
-
-    def __exportMistaked(self, workSheet):
-        rowNum = 1
-        workSheet.Cells(rowNum, 13).Value = "Mistaked"
-        workSheet.Cells(rowNum, 14).Value = "OLD REV."
-        workSheet.Cells(rowNum, 15).Value = "NEW REV."
-
-        rowNum += 1
-        for nomination in self.names_("Mistaked"):
-            workSheet.Cells(rowNum, 13).Value = nomination
-            workSheet.Cells(rowNum, 14).Value = self.dataOldHandled_(nomination)
-            workSheet.Cells(rowNum, 15).Value = self.dataNewHandled_(nomination)
+            newRev = self.dataOldHandled_[nomination]
+            workSheet[f'K{str(rowNum)}'] = newRev
 
             rowNum += 1
 
-    def __exportMistakedInNewDoc(self, workSheet):
+    def __exportMistaked(self, workSheet) -> None:
         rowNum = 1
-        workSheet.Cells(rowNum, 17).Value = "Mistaked with diff REV."
-        workSheet.Cells(rowNum, 18).Value = "REV."
+        workSheet['M1'] = "Mistaked"
+        workSheet['N1'] = "OLD REV."
+        workSheet['O1'] = "NEW REV."
+        rowNum += 1
+        for nomination in self.names_["Mistaked"]:
+            workSheet[f'M{str(rowNum)}'] = nomination
+            workSheet[f'N{str(rowNum)}'] = self.dataOldHandled_[nomination]
+            workSheet[f'O{str(rowNum)}'] = self.dataNewHandled_[nomination]
+
+            rowNum += 1
+
+    def __exportMistakedInNewDoc(self, workSheet) -> None:
+        rowNum = 1
+        workSheet['Q1'] = "Mistaked with diff REV."
+        workSheet['R1'] = "REV."
 
         rowNum += 1
-        for item in self.mistakedWithDiffRevInNew_:
-            revs = item.Value()
+        for nom, revs in self.mistakedWithDiffRevInNew_.items():
             for rev in revs:
-                workSheet.Cells(rowNum, 17).Value = item.Key()
-                workSheet.Cells(rowNum, 18).Value = rev
+                workSheet[f'Q{str(rowNum)}'] = nom
+                workSheet[f'R{str(rowNum)}'] = rev
                 rowNum += 1
+
+    def __exportWordData(self, data, pathToExtractedData) -> None:
+        wb = openpyxl.Workbook()
+        workSheet = wb.active
+        workSheet.title = "Extracted data"
+
+        rowNum = 1
+        workSheet['A1'] = "NAME"
+        workSheet['B1'] = "REV."
+        rowNum += 1
+        for key, values in data.items():
+            for value in values:
+                workSheet[f'A{rowNum}'] = key
+                workSheet[f'B{rowNum}'] = value
+                rowNum += 1
+
+        wb.save(pathToExtractedData)

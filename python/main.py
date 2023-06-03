@@ -39,7 +39,7 @@ class MyWindow(QMainWindow):
         self.handler_.setPathToNewWord(pathToNewWord)
         self.handler_.parseNewWord()
         if self.ui.chbxExportNew2Excel.isChecked():
-            self.handler_.exportOldWordData()
+            self.handler_.exportNewWordData()
         self.ui.lblNewWord.setText(" : " + pathToNewWord)
 
     def __onCompareAndExport(self):
@@ -47,8 +47,9 @@ class MyWindow(QMainWindow):
         self.__exportComparedData()
 
     def __onClean(self):
-        # implementation for cleaning files
-        pass
+        self.handler_.clearData()
+        self.ui.lblOldWord.setText(" : ")
+        self.ui.lblNewWord.setText(" : ")
 
     def __getOpenFileName(self, extension: str):
         options = QFileDialog.Options()
