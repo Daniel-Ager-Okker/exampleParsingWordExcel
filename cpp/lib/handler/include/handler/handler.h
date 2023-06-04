@@ -1,16 +1,17 @@
-#pragma once
-
-#include <QMainWindow>
 #include <memory>
 
-class ConverterMainWindow : public QMainWindow {
-	Q_OBJECT
+class Handler {
 public:
-	explicit ConverterMainWindow(QMainWindow* parent = nullptr);
+	Handler();
+	~Handler();
 
-	~ConverterMainWindow();
+    void setPathToOldWord(const std::string& path);
+    void setPathToNewWord(const std::string& path);
+    void parseOldWord();
+    void exportOldWordData();
+    void exportNewWordData();
 
 private:
 	class PrivateData;
-	std::unique_ptr<PrivateData> m_pData;
+	std::unique_ptr<PrivateData> pData_;
 };

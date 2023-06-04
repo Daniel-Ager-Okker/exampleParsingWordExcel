@@ -11,6 +11,16 @@ public:
 	~ConverterMainWindow();
 
 private:
+	void setConnections();
+
+private slots:
+	void onLoadOldWord();
+	void onLoadNewWord();
+	void onCompareAndExport();
+	void onClean();
+
+
+private:
 	class PrivateData;
-	std::unique_ptr<PrivateData> m_pData;
+	std::unique_ptr<PrivateData> pData_;
 };
