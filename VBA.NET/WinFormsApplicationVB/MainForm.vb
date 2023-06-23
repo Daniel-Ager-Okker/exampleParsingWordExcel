@@ -115,6 +115,25 @@
         pbLoadPDBExcel.Enabled = True
     End Sub
 
+    Private Sub onMakeExcelDBFromWords(sender As Object, e As EventArgs) Handles pbMakeExcelDBFromWords.Click
+        Dim pathToFolder = getOpenFolderDialog()
+        If (Equals("", pathToFolder)) Then
+            Return
+        End If
+
+        If chbxAcceptAllRevs.Checked Then
+            handler_.acceptAllRevs(pathToFolder)
+        End If
+
+        handler_.makeExcelDBFromWords(pathToFolder)
+    End Sub
+
+    Private Function getOpenFolderDialog() As String
+        Dim dialog As New FolderBrowserDialog
+        dialog.ShowDialog()
+        Return dialog.SelectedPath
+    End Function
+
     Private Function getOpenFileName(extension As String) As String
         Dim dialog As New OpenFileDialog
         dialog.Filter = "Файлы " + "(*." + extension + ")|*." + extension
@@ -128,5 +147,4 @@
         dialog.ShowDialog()
         Return dialog.FileName
     End Function
-
 End Class

@@ -1,6 +1,8 @@
 ﻿Imports DocumentFormat.OpenXml.Packaging
 Imports DocumentFormat.OpenXml.Wordprocessing
 Imports Microsoft.Office.Interop.Excel
+Imports Microsoft.Office.Interop.Word
+Imports System.IO
 Imports WordTable = DocumentFormat.OpenXml.Wordprocessing.Table
 
 Public Class Handler
@@ -47,6 +49,70 @@ Public Class Handler
     Public Sub exportNewWordData()
         exportWordData(dataNewDoc_, pathToNewWord_.Replace(".docx", ".xlsx"))
     End Sub
+
+    Public Sub acceptAllRevs(pathToWordsFodler As String)
+        Dim files = Directory.GetFiles(pathToWordsFodler)
+
+        For Each file In files
+            Dim wordApp As New Microsoft.Office.Interop.Word.Application()
+            Dim doc As Microsoft.Office.Interop.Word.Document = wordApp.Documents.Open(file)
+            doc.AcceptAllRevisions()
+            doc.Save()
+            doc.Close()
+            wordApp.Quit()
+        Next
+    End Sub
+
+    Public Sub makeExcelDBFromWords(pathToWordsFodler As String)
+        Dim dataDocs = New Dictionary(Of String, Dictionary(Of String, List(Of String)))
+
+        Dim files = Directory.GetFiles(pathToWordsFodler)
+
+        For Each file In files
+            Dim dataDoc = New Dictionary(Of String, List(Of String))()
+            parseWord(file, dataDoc)
+
+            Dim fileName = Path.GetFileName(file)
+            Dim start = fileName.IndexOf("DP-")
+            Dim finish = fileName.LastIndexOf("_")
+            Dim identificator = fileName.Substring(start, finish - start)
+            dataDocs.Add(identificator, dataDoc)
+        Next
+
+        makeExcelDB(pathToWordsFodler + "/DB.xlsx", dataDocs)
+    End Sub
+
+    Private Function makeExcelDB(path As String, data As Dictionary(Of String, Dictionary(Of String, List(Of String))))
+        Dim excelApp As New Microsoft.Office.Interop.Excel.Application()
+        Dim workBook = excelApp.Workbooks.Add()
+        Dim workSheet = workBook.Worksheets(1)
+
+        workSheet.Cells(1, 1).Value = "NAME"
+        workSheet.Cells(1, 2).Value = "REV."
+        workSheet.Cells(1, 3).Value = "WORD FILE"
+
+        Dim rowNum = 2
+        For Each item In data
+            Dim fileName = item.Key
+            Dim fileContent = item.Value
+
+            For Each innerItem In fileContent
+                Dim nomination = innerItem.Key
+                Dim revisions = innerItem.Value
+                For Each rev In revisions
+                    workSheet.Cells(rowNum, 1).Value = nomination
+                    workSheet.Cells(rowNum, 2).Value = rev
+                    workSheet.Cells(rowNum, 3).Value = fileName
+                    rowNum += 1
+                Next
+            Next
+        Next
+
+        workSheet.Name = "DB"
+        excelApp.ActiveWorkbook.SaveAs(path)
+        workBook.Close()
+        excelApp.Quit()
+    End Function
 
     Private Function exportWordData(data As Dictionary(Of String, List(Of String)), path As String)
         Dim excelApp As New Microsoft.Office.Interop.Excel.Application()

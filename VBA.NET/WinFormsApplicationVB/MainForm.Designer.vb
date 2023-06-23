@@ -34,6 +34,8 @@ Partial Class ConverterWindow
         Me.pbLoadPDBExcel = New System.Windows.Forms.Button()
         Me.lblLoadPDBExcel = New System.Windows.Forms.Label()
         Me.pbCompareWithPDBAndExport = New System.Windows.Forms.Button()
+        Me.pbMakeExcelDBFromWords = New System.Windows.Forms.Button()
+        Me.chbxAcceptAllRevs = New System.Windows.Forms.CheckBox()
         Me.SuspendLayout()
         '
         'chbxExportOld2Excel
@@ -151,11 +153,34 @@ Partial Class ConverterWindow
         Me.pbCompareWithPDBAndExport.Text = "CompareWithPDBAndExport"
         Me.pbCompareWithPDBAndExport.UseVisualStyleBackColor = True
         '
+        'pbMakeExcelDBFromWords
+        '
+        Me.pbMakeExcelDBFromWords.Location = New System.Drawing.Point(9, 190)
+        Me.pbMakeExcelDBFromWords.MaximumSize = New System.Drawing.Size(150, 23)
+        Me.pbMakeExcelDBFromWords.MinimumSize = New System.Drawing.Size(150, 23)
+        Me.pbMakeExcelDBFromWords.Name = "pbMakeExcelDBFromWords"
+        Me.pbMakeExcelDBFromWords.Size = New System.Drawing.Size(150, 23)
+        Me.pbMakeExcelDBFromWords.TabIndex = 13
+        Me.pbMakeExcelDBFromWords.Text = "MakeExcelDBFromWords"
+        Me.pbMakeExcelDBFromWords.UseVisualStyleBackColor = True
+        '
+        'chbxAcceptAllRevs
+        '
+        Me.chbxAcceptAllRevs.AutoSize = True
+        Me.chbxAcceptAllRevs.Location = New System.Drawing.Point(164, 194)
+        Me.chbxAcceptAllRevs.Name = "chbxAcceptAllRevs"
+        Me.chbxAcceptAllRevs.Size = New System.Drawing.Size(116, 17)
+        Me.chbxAcceptAllRevs.TabIndex = 14
+        Me.chbxAcceptAllRevs.Text = "acceptAllRevisions"
+        Me.chbxAcceptAllRevs.UseVisualStyleBackColor = True
+        '
         'ConverterWindow
         '
         Me.AutoScaleDimensions = New System.Drawing.SizeF(6.0!, 13.0!)
         Me.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font
-        Me.ClientSize = New System.Drawing.Size(738, 201)
+        Me.ClientSize = New System.Drawing.Size(738, 261)
+        Me.Controls.Add(Me.chbxAcceptAllRevs)
+        Me.Controls.Add(Me.pbMakeExcelDBFromWords)
         Me.Controls.Add(Me.chbxExportNew2Excel)
         Me.Controls.Add(Me.chbxExportOld2Excel)
         Me.Controls.Add(Me.pbCompareWithPDBAndExport)
@@ -168,8 +193,8 @@ Partial Class ConverterWindow
         Me.Controls.Add(Me.pbLoadNewWord)
         Me.Controls.Add(Me.pbLoadOldWord)
         Me.Icon = CType(resources.GetObject("$this.Icon"), System.Drawing.Icon)
-        Me.MaximumSize = New System.Drawing.Size(854, 240)
-        Me.MinimumSize = New System.Drawing.Size(300, 240)
+        Me.MaximumSize = New System.Drawing.Size(854, 300)
+        Me.MinimumSize = New System.Drawing.Size(300, 300)
         Me.Name = "ConverterWindow"
         Me.RightToLeftLayout = True
         Me.Text = "Converter"
@@ -189,4 +214,6 @@ Partial Class ConverterWindow
     Friend WithEvents pbCompareWithPDBAndExport As Button
     Friend WithEvents chbxExportOld2Excel As CheckBox
     Friend WithEvents chbxExportNew2Excel As CheckBox
+    Friend WithEvents pbMakeExcelDBFromWords As Button
+    Friend WithEvents chbxAcceptAllRevs As CheckBox
 End Class
