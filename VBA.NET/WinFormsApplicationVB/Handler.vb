@@ -6,6 +6,8 @@ Imports System.IO
 Imports WordTable = DocumentFormat.OpenXml.Wordprocessing.Table
 
 Public Class Handler
+    Private logger_ = New Logger()
+
     Private pathToOldWord_ As String
     Private pathToNewWord_ As String
 
@@ -38,13 +40,25 @@ Public Class Handler
     End Sub
 
     Public Sub parseOldWord()
+        Dim oldWordName = pathToOldWord_.Substring(0, pathToOldWord_.LastIndexOf("."))
+
+        Dim logFile = oldWordName + "_parse.txt"
+        logger_.setPath2LogFile(logFile)
+        logger_.startLogging()
         acceptAllRevsInDoc(pathToOldWord_)
         parseWord(pathToOldWord_, dataOldDoc_)
         handleMistakedInOneDoc(dataOldDoc_, mistakedWithDiffRevInOld_, dataOldHandled_)
+        logger_.endLogging()
     End Sub
 
     Public Sub exportOldWordData()
+        Dim oldWordName = pathToOldWord_.Substring(0, pathToOldWord_.LastIndexOf("."))
+
+        Dim logFile = oldWordName + "_export.txt"
+        logger_.setPath2LogFile(logFile)
+        logger_.startLogging()
         exportWordData(dataOldDoc_, pathToOldWord_.Replace(".docx", ".xlsx"))
+        logger_.endLogging()
     End Sub
 
     Public Sub exportNewWordData()
@@ -60,12 +74,22 @@ Public Class Handler
     End Sub
 
     Public Sub acceptAllRevsInDoc(pathToDoc As String)
+        logger_.setLogMessage("accepting all revs in doc")
+
         Dim wordApp As New Microsoft.Office.Interop.Word.Application()
         Dim doc As Microsoft.Office.Interop.Word.Document = wordApp.Documents.Open(pathToDoc)
+
+        logger_.setLogMessage("file was opened")
+
         doc.AcceptAllRevisions()
+
+        logger_.setLogMessage("all revs was confirmed")
+
         doc.Save()
         doc.Close()
         wordApp.Quit()
+
+        logger_.setLogMessage("file was saved and closed successfuly")
     End Sub
 
     Public Sub makeExcelDBFromWords(pathToWordsFodler As String)
@@ -120,9 +144,16 @@ Public Class Handler
     End Function
 
     Private Function exportWordData(data As Dictionary(Of String, List(Of String)), path As String)
+        logger_.setLogMessage("exporting data to xlsx from " + path)
+
         Dim excelApp As New Microsoft.Office.Interop.Excel.Application()
+
+        logger_.setLogMessage("created xlsx application")
+
         Dim workBook = excelApp.Workbooks.Add()
         Dim workSheet = workBook.Worksheets(1)
+
+        logger_.setLogMessage("added worksheet")
 
         workSheet.Cells(1, 1).Value = "NAME"
         workSheet.Cells(1, 2).Value = "REV."
@@ -139,10 +170,14 @@ Public Class Handler
             Next rev
         Next item
 
+        logger_.setLogMessage("worksheet was filled by data from docx")
+
         workSheet.Name = "DataOldDoc"
         excelApp.ActiveWorkbook.SaveAs(path)
         workBook.Close()
         excelApp.Quit()
+
+        logger_.setLogMessage("Data from " + path + " exported successfuly")
     End Function
 
     Public Sub parseNewWord()
