@@ -38,6 +38,7 @@ Public Class Handler
     End Sub
 
     Public Sub parseOldWord()
+        acceptAllRevsInDoc(pathToOldWord_)
         parseWord(pathToOldWord_, dataOldDoc_)
         handleMistakedInOneDoc(dataOldDoc_, mistakedWithDiffRevInOld_, dataOldHandled_)
     End Sub
@@ -54,13 +55,17 @@ Public Class Handler
         Dim files = Directory.GetFiles(pathToWordsFodler)
 
         For Each file In files
-            Dim wordApp As New Microsoft.Office.Interop.Word.Application()
-            Dim doc As Microsoft.Office.Interop.Word.Document = wordApp.Documents.Open(file)
-            doc.AcceptAllRevisions()
-            doc.Save()
-            doc.Close()
-            wordApp.Quit()
+            acceptAllRevsInDoc(file)
         Next
+    End Sub
+
+    Public Sub acceptAllRevsInDoc(pathToDoc As String)
+        Dim wordApp As New Microsoft.Office.Interop.Word.Application()
+        Dim doc As Microsoft.Office.Interop.Word.Document = wordApp.Documents.Open(pathToDoc)
+        doc.AcceptAllRevisions()
+        doc.Save()
+        doc.Close()
+        wordApp.Quit()
     End Sub
 
     Public Sub makeExcelDBFromWords(pathToWordsFodler As String)
@@ -141,6 +146,7 @@ Public Class Handler
     End Function
 
     Public Sub parseNewWord()
+        acceptAllRevsInDoc(pathToNewWord_)
         parseWord(pathToNewWord_, dataNewDoc_)
         handleMistakedInOneDoc(dataNewDoc_, mistakedWithDiffRevInNew_, dataNewHandled_)
     End Sub
@@ -169,11 +175,18 @@ Public Class Handler
 
         Dim secondCellText As String = firstRowCells.ElementAt(1).InnerText.ToLower()
 
-        If secondCellText.Contains("workpack") Or secondCellText.Contains("block") Or secondCellText.Contains("assembly") Then
+        If secondCellText.Contains("workpack") Or secondCellText.Contains("block") Then
             Return False
         End If
 
-        Dim keyWords() As String = {"subassembly", "node", "mark", "details", "single", "part"}
+        If secondCellText.Contains("assembly") Then
+            Dim fifthCellText As String = firstRowCells.ElementAt(4).InnerText.ToLower()
+            If fifthCellText.Contains("DP") Or fifthCellText.Contains("dp") Then
+                Return False
+            End If
+        End If
+
+        Dim keyWords() As String = {"Subassembly", "subassembly", "node", "mark", "details", "single", "part"}
         For Each keyWord As String In keyWords
             If secondCellText.Contains(keyWord) Then
                 Return True
